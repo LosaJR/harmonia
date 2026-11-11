@@ -29,6 +29,8 @@ Estado real del proyecto. «Hecho» significa verificado como se indica en la ú
 | PDF/imagen de partitura → sonido | **No soportado** | Requiere OMR; se explica al usuario cómo obtener MIDI/MusicXML |
 | Melodía de «Let It Be» | **No incluida** | Obra protegida: solo se incluye el esquema de acordes y un acompañamiento propio |
 
+**Ajustes posteriores:** el rollo de piano rotula cada nota con su nombre (latino o internacional) y ajusta su altura para que se lea; al pausar, las teclas del piano se quedan iluminadas donde se paró (también al moverse por la canción en pausa), y «Al principio» las apaga. Verificado a mano.
+
 **No verificado:** archivos MP3 reales (se probó con WAV; ambos usan el mismo `<audio>`), partituras reales grandes de MuseScore, modo «esperar a que toques» (no implementado).
 
 ## Lo que se comprobó con pruebas automáticas y lo que a mano

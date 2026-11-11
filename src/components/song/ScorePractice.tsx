@@ -45,8 +45,22 @@ export function ScorePractice({ score }: { score: Score }) {
     })
   }, [events, rate, loop])
 
-  const pause = useCallback(() => { run.current++; stopPlayback(); setPlaying(false); clearMarks(); lastMarks.current = '' }, [])
-  const stop = () => { pause(); posRef.current = 0; setPos(0) }
+  /** Ilumina en el piano las notas que suenan en el instante `t`. */
+  const showAt = useCallback((t: number, m: Set<number>) => {
+    const marks: Record<number, KeyMark> = {}
+    activeAt(score, t, m).forEach((n) => { marks[n] = 'target' })
+    lastMarks.current = Object.keys(marks).join(',')
+    setMarks(marks)
+  }, [score])
+  // Al pausar, las teclas se quedan iluminadas donde se haya parado la canción
+  const pause = useCallback((keepKeys = true) => {
+    run.current++
+    const at = scorePosition() ?? posRef.current
+    stopPlayback()
+    setPlaying(false)
+    if (keepKeys) { posRef.current = at; setPos(at); showAt(at, muted) } else { clearMarks(); lastMarks.current = '' }
+  }, [showAt, muted])
+  const stop = () => { pause(false); posRef.current = 0; setPos(0) }
 
   // Cursor, teclas iluminadas y bucle visual mientras suena
   useEffect(() => {
@@ -79,12 +93,17 @@ export function ScorePractice({ score }: { score: Score }) {
 
   useEffect(() => () => { stopPlayback(); clearMarks() }, [])
   // Cambiar de canción (o de patrón) reinicia el reproductor
-  useEffect(() => { pause(); posRef.current = 0; setPos(0); setMuted(new Set()); setLoopOn(false); setFrom(1); setTo(Math.min(4, score.bars.length)) }, [score]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { pause(false); posRef.current = 0; setPos(0); setMuted(new Set()); setLoopOn(false); setFrom(1); setTo(Math.min(4, score.bars.length)) }, [score]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const seek = (t: number) => { posRef.current = t; setPos(t); if (playing) start(t) }
+  const seek = (t: number) => { posRef.current = t; setPos(t); if (playing) start(t); else showAt(t, muted) }
   const curBar = barAt(score, pos)
   const curChord = score.chords?.findIndex((c) => pos >= c.t && pos < c.t + c.d) ?? -1
-  const toggleTrack = (i: number) => setMuted((m) => { const n = new Set(m); if (n.has(i)) n.delete(i); else n.add(i); return n })
+  const toggleTrack = (i: number) => {
+    const n = new Set(muted)
+    if (n.has(i)) n.delete(i); else n.add(i)
+    setMuted(n)
+    if (!playing && pos > 0) showAt(posRef.current, n)
+  }
 
   const sections = useMemo(() => {
     if (!score.chords) return []
@@ -103,7 +122,7 @@ export function ScorePractice({ score }: { score: Score }) {
     <div className="stack" style={{ gap: 18 }}>
       <div className="cluster" style={{ justifyContent: 'space-between' }}>
         <div className="cluster">
-          <button className="btn btn-primary" onClick={() => (playing ? pause() : start(posRef.current >= score.duration - 0.05 ? 0 : posRef.current))} aria-pressed={playing}>{playing ? <Stop /> : <Play />} {playing ? 'Pausa' : pos > 0.05 ? 'Continuar' : 'Reproducir'}</button>
+          <button className="btn btn-primary" onClick={() => (playing ? pause(true) : start(posRef.current >= score.duration - 0.05 ? 0 : posRef.current))} aria-pressed={playing}>{playing ? <Stop /> : <Play />} {playing ? 'Pausa' : pos > 0.05 ? 'Continuar' : 'Reproducir'}</button>
           <button className="btn" onClick={stop}>Al principio</button>
         </div>
         <span className="mono-num muted" aria-live="off">Compás {curBar + 1} de {bars.length} · {fmt(pos)} / {fmt(score.duration)}</span>

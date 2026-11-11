@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { formatNote, midiToName } from '../../music/notes'
 import type { Score } from '../../songs/score'
+import { useNaming } from '../ui'
 
 const SPAN = 7 // segundos visibles
 const HEAD = 0.22 // posición del cursor (fracción del ancho)
@@ -15,8 +17,18 @@ interface Props {
 }
 
 /** Rollo de piano: las notas se acercan al cursor desde la derecha. Un clic mueve la reproducción. */
-export function PianoRoll({ score, pos, muted, loop, onSeek, height = 190 }: Props) {
+export function PianoRoll({ score, pos, muted, loop, onSeek, height: minHeight = 190 }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
+  const naming = useNaming()
+  const range = useMemo(() => {
+    let lo = Infinity
+    let hi = -Infinity
+    for (const n of score.notes) { if (n.midi < lo) lo = n.midi; if (n.midi > hi) hi = n.midi }
+    lo -= 1; hi += 1
+    return { lo, hi, rows: Math.max(hi - lo + 1, 14) }
+  }, [score])
+  // Cada fila mide al menos 13 px para que se pueda leer el nombre de la nota
+  const height = Math.min(420, Math.max(minHeight, range.rows * 13))
 
   useEffect(() => {
     const cv = ref.current
@@ -30,9 +42,7 @@ export function PianoRoll({ score, pos, muted, loop, onSeek, height = 190 }: Pro
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     const css = getComputedStyle(document.documentElement)
     const col = (v: string, fb: string) => css.getPropertyValue(v).trim() || fb
-    const lo = Math.min(...score.notes.map((n) => n.midi)) - 1
-    const hi = Math.max(...score.notes.map((n) => n.midi)) + 1
-    const rows = Math.max(hi - lo + 1, 14)
+    const { lo, hi, rows } = range
     const rowH = h / rows
     const px = (t: number) => w * HEAD + ((t - pos) / SPAN) * w
     const yOf = (m: number) => h - (m - lo + 1) * rowH
@@ -71,6 +81,14 @@ export function PianoRoll({ score, pos, muted, loop, onSeek, height = 190 }: Pro
       ctx.beginPath()
       ctx.roundRect(x0, yOf(n.midi) + 1, rw, Math.max(3, rowH - 2), 2)
       ctx.fill()
+      // nombre de la nota dentro de la barra (si cabe)
+      if (rowH >= 11 && rw >= 22 && x0 + rw > 0) {
+        ctx.fillStyle = '#16120c'
+        ctx.font = `600 ${Math.min(11, Math.floor(rowH - 3))}px sans-serif`
+        ctx.textBaseline = 'middle'
+        ctx.fillText(formatNote(midiToName(n.midi), naming), Math.max(x0, 0) + 4, yOf(n.midi) + rowH / 2 + 0.5, Math.max(10, rw - 6))
+        ctx.textBaseline = 'alphabetic'
+      }
     }
     ctx.globalAlpha = 1
     // cursor
