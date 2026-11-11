@@ -336,3 +336,19 @@ export function functionLabel(roman: string, key: Key): { code: 'T' | 'PD' | 'D'
   const f = fnOfDegree(degree)
   return { code: f, label: f === 'T' ? 'Tónica' : f === 'PD' ? 'Predominante' : 'Dominante' }
 }
+
+// ---------- Cifrado → acorde ----------
+
+const SUFFIX_ALIASES: Record<string, string> = {
+  min: 'min', '-': 'min', m: 'min', M7: 'maj7', 'Δ': 'maj7', 'Δ7': 'maj7', '°': 'dim', o: 'dim', '°7': 'dim7', o7: 'dim7', 'ø': 'm7b5', 'ø7': 'm7b5', '+': 'aug', '-7': 'm7', min7: 'm7', 'm(maj7)': 'mMaj7', 'mM7': 'mMaj7', 'm7(b5)': 'm7b5',
+}
+
+/** Interpreta un cifrado americano ("Am7", "C/E", "F#m7b5", "Gsus4") como fundamental + calidad + bajo. */
+export function parseChordSymbol(sym: string): { root: string; quality: string; bass?: string } | null {
+  const m = sym.trim().replace(/♯/g, '#').replace(/♭/g, 'b').match(/^([A-G][#b]?)([^/]*)(?:\/([A-G][#b]?))?$/)
+  if (!m) return null
+  const suffix = m[2]
+  const q = QUALITIES.find((x) => x.suffix === suffix)?.id ?? SUFFIX_ALIASES[suffix]
+  if (!q) return null
+  return { root: m[1], quality: q, bass: m[3] }
+}

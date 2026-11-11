@@ -32,6 +32,7 @@ export function ProgressionBuilder() {
   const [playing, setPlaying] = useState<number | null>(null)
   const [custom, setCustom] = useState('')
   const [customErr, setCustomErr] = useState('')
+  const run = useRef(0)
 
   const chords = useMemo(() => {
     try { return buildProgression(items, key) } catch { return [] }
@@ -43,17 +44,18 @@ export function ProgressionBuilder() {
   useEffect(() => () => { stopPlayback(); clearMarks() }, [])
 
   // Si cambia la progresión mientras suena, se detiene para no desincronizar
-  const stop = () => { stopPlayback(); setPlaying(null); clearMarks() }
+  const stop = () => { run.current++; stopPlayback(); setPlaying(null); clearMarks() }
   useEffect(() => { if (playing !== null) stop() }, [items, key, vmode, bass]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const start = (bpm: number) => {
     if (!steps.length) return
     setPlaying(0)
+    const id = ++run.current
     void playSteps(steps, {
       tempo: bpm,
       loop,
-      onStep: (i) => { setPlaying(i); setTargets(steps[i].notes) },
-      onEnd: () => { setPlaying(null); clearMarks() },
+      onStep: (i) => { if (id === run.current) { setPlaying(i); setTargets(steps[i].notes) } },
+      onEnd: () => { if (id !== run.current) return; setPlaying(null); clearMarks() },
     })
   }
   const play = () => { if (playing !== null) stop(); else start(tempo) }

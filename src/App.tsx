@@ -12,10 +12,12 @@ import { Lab } from './pages/Lab'
 import { Trainer } from './pages/Trainer'
 import { Progress } from './pages/Progress'
 import { Settings } from './pages/Settings'
+import { SongPage, Songs } from './pages/Songs'
 
 const NAV = [
   { to: '/', label: 'Inicio', end: true },
   { to: '/curso', label: 'Curso' },
+  { to: '/canciones', label: 'Canciones' },
   { to: '/piano', label: 'Piano' },
   { to: '/laboratorio', label: 'Laboratorio' },
   { to: '/entrenador', label: 'Entrenador' },
@@ -56,7 +58,7 @@ export function App() {
   // Al cambiar de página se corta cualquier reproducción en curso
   useEffect(() => { stopPlayback(); window.scrollTo(0, 0) }, [loc.pathname])
 
-  const dock = /^\/(curso\/.+|laboratorio|entrenador)/.test(loc.pathname)
+  const dock = /^\/(curso\/.+|laboratorio|entrenador|canciones\/.+)/.test(loc.pathname)
   const saveError = getSaveError()
 
   return (
@@ -76,6 +78,8 @@ export function App() {
           <Route path="/" element={<Home />} />
           <Route path="/curso" element={<Course />} />
           <Route path="/curso/:lessonId" element={<LessonPage />} />
+          <Route path="/canciones" element={<Songs />} />
+          <Route path="/canciones/:songId" element={<SongPage />} />
           <Route path="/piano" element={<PianoPage />} />
           <Route path="/laboratorio" element={<Lab />} />
           <Route path="/entrenador" element={<Trainer />} />

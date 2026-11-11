@@ -44,6 +44,15 @@ Está siempre disponible en la parte inferior de lecciones, laboratorio y entren
 ### Teclado MIDI
 Pulsa **Conectar MIDI** (en el piano o en Ajustes) y concede el permiso del navegador. Las notas del teclado tocan el piano virtual, responden a los ejercicios y la desconexión se detecta sola. Si el navegador no admite MIDI se avisa y todo sigue funcionando con el piano virtual.
 
+### Canciones
+Abre **Canciones** para practicar con música real:
+
+- **Audio** (MP3, WAV, OGG, M4A…, hasta 80 MB): suena tal cual; puedes bajar la velocidad **sin cambiar el tono**, marcar un bucle A–B y tocar el piano a la vez.
+- **Partitura** (MIDI `.mid`, MusicXML `.musicxml`/`.xml` y comprimido `.mxl`, hasta 10 MB): Harmonia la convierte en sonido con su piano. Se muestra como **rollo de piano** con cursor; las teclas se iluminan; puedes cambiar la velocidad (50–110 %), repetir un tramo de compases y silenciar pistas (por ejemplo, la mano derecha para tocarla tú).
+- **PDF o imágenes de partituras no se pueden convertir** (haría falta reconocimiento óptico de partituras, que no está incluido). Descarga la partitura en MIDI o MusicXML: MuseScore y la mayoría de webs de partituras lo ofrecen.
+- Los archivos se guardan **solo en tu navegador** (IndexedDB); no se suben a ningún servidor ni viajan con la exportación de progreso. Usa material que tengas derecho a utilizar.
+- **Let It Be (The Beatles)** viene incluida como esquema de acordes en Do mayor con un acompañamiento de piano generado por la app (acordes o arpegio). No incluye la melodía ni la letra, que están protegidas por derechos de autor; si tienes su partitura en MIDI/MusicXML de una fuente que puedas usar, añádela para practicar también la melodía.
+
 ### Laboratorio
 1. **Constructor de acordes**: fundamental, calidad, extensiones y alteraciones compatibles, inversión y registro.
 2. **Explorador de escalas**: 18 escalas y modos, grados, intervalos y acordes diatónicos (tríadas y séptimas).
@@ -71,6 +80,7 @@ src/
   audio/       Motor de audio con Tone.js (singleton) y MIDI (Web MIDI API)
   exercises/   Generadores por reglas, corrector musical y formato de texto
   content/     Los 5 niveles como datos tipados + temario y validación
+  songs/       Canciones: lectores de MIDI/MusicXML/MXL, acompañamiento de esquemas de acordes, IndexedDB
   store/       Progreso/ajustes (localStorage con respaldo), estado del piano
   components/  Piano, pentagrama, teclado SVG, reproductor de ejercicios…
   pages/       Inicio, curso, lección, piano, laboratorio (lab/), entrenador, progreso, ajustes
@@ -81,11 +91,13 @@ src/
 - Ampliar el curso = añadir una lección a `src/content/levelN.ts`. Las pruebas validan campos, prerrequisitos, cobertura del temario (83 temas) y referencias a generadores.
 
 ## Pruebas
-`npm test` ejecuta 145 pruebas: motor musical con ejemplos de respuesta conocida (escalas, acordes, inversiones, transposición, ii–V–I, enarmonía), corrector, 25 generadores × 3 dificultades, contenido del curso, persistencia, importación/exportación, errores de almacenamiento y análisis de mensajes MIDI.
+`npm test` ejecuta 160 pruebas: motor musical con ejemplos de respuesta conocida (escalas, acordes, inversiones, transposición, ii–V–I, enarmonía), corrector, 25 generadores × 3 dificultades, contenido del curso, persistencia, importación/exportación, errores de almacenamiento análisis de mensajes MIDI y el módulo de canciones (MIDI, MusicXML con ligaduras y acordes, ZIP/MXL, acompañamiento de Let It Be).
 
 ## Limitaciones conocidas
 - El sonido es sintetizado: agradable y coherente, pero no es un piano de concierto muestreado.
 - Playwright no está instalado (descarga navegadores); la interacción real se verificó en el navegador integrado y con las pruebas de Vitest. Ver `ROADMAP.md`.
+- Las partituras no expanden las repeticiones (se avisa), no se lee MusicXML «timewise» y los PDF/imágenes no se admiten.
+- Las canciones añadidas no se incluyen en la exportación de progreso y no se sincronizan entre ordenadores.
 - Web MIDI solo existe en navegadores basados en Chromium; no se ha podido probar con un teclado físico en este entorno (sí el análisis de mensajes y la ruta sin dispositivo).
 - Los ejercicios de oído y de piano se evalúan por conjunto de notas, sin medir el ritmo de ejecución.
 - Las tareas «Prueba en el piano» reconocen acordes pulsados a la vez o escalas en orden; no valoran la digitación.

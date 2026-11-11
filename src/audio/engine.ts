@@ -180,6 +180,7 @@ export function stopPlayback(): void {
     Tone.getDraw().cancel(0)
   } catch { /* contexto aún no creado */ }
   instruments.forEach((i) => i.releaseAll(Tone.now()))
+  scoreCtx = null
   const cb = onEndCb
   onEndCb = undefined
   cb?.()
@@ -258,5 +259,76 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     held: () => [...held.keys()],
     voices: () => [...instruments.entries()].map(([k, v]) => [k, v.activeVoices]),
     transport: () => Tone.getTransport().state,
+    scoreCtx: () => scoreCtx,
+    seconds: () => Tone.getTransport().seconds,
   }
 }
+
+// ---------- reproducción de partituras ----------
+
+export interface ScoreEvent { t: number; d: number; midi: number; vel?: number }
+export interface ScorePlayOptions {
+  /** Velocidad relativa (1 = tempo original). */
+  rate: number
+  /** Instante de la partitura (s) desde el que empieza. */
+  from: number
+  /** Bucle [inicio, fin] en segundos de la partitura. */
+  loop?: [number, number] | null
+  onEnd?: () => void
+}
+
+let scoreCtx: { a: number; rate: number } | null = null
+
+/** Reproduce una lista de notas con tiempos absolutos. Cancela cualquier reproducción previa. */
+export async function playScoreEvents(events: ScoreEvent[], opts: ScorePlayOptions): Promise<void> {
+  if (!(await ensureAudio())) return
+  stopPlayback()
+  const id = activeId
+  const inst = instrument()
+  const tr = Tone.getTransport()
+  tr.position = 0
+  const a = opts.loop ? opts.loop[0] : opts.from
+  const b = opts.loop ? opts.loop[1] : Infinity
+  const rate = opts.rate
+  scoreCtx = { a, rate }
+  let last = 0
+  for (const e of events) {
+    if (e.t >= b || e.t + e.d <= a) continue
+    const start = Math.max(e.t, a)
+    const end = Math.min(e.t + e.d, b)
+    const rel = (start - a) / rate
+    const dur = Math.max(0.05, (end - start) / rate)
+    last = Math.max(last, rel + dur)
+    const name = midiToNote(e.midi)
+    tr.schedule((time) => { if (id === activeId) inst.triggerAttackRelease(name, dur, time, e.vel ?? 0.7) }, rel)
+  }
+  if (opts.loop) {
+    tr.loop = true
+    tr.loopStart = 0
+    tr.loopEnd = (b - a) / rate
+  } else {
+    tr.loop = false
+    onEndCb = opts.onEnd
+    tr.schedule((time) => {
+      Tone.getDraw().schedule(() => {
+        if (id !== activeId) return
+        const cb = onEndCb
+        onEndCb = undefined
+        scoreCtx = null
+        cb?.()
+      }, time)
+    }, last + 0.4)
+  }
+  tr.start('+0.05')
+}
+
+/** Posición actual (s de partitura) durante la reproducción de `playScoreEvents`; null si no suena. */
+export function scorePosition(): number | null {
+  if (!scoreCtx) return null
+  const tr = Tone.getTransport()
+  if (tr.state !== 'started') return null
+  return scoreCtx.a + tr.seconds * scoreCtx.rate
+}
+
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const midiToNote = (m: number) => `${NOTE_NAMES[m % 12]}${Math.floor(m / 12) - 1}`

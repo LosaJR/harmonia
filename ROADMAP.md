@@ -16,10 +16,23 @@ Estado real del proyecto. «Hecho» significa verificado como se indica en la ú
 | 10 | MIDI y persistencia | Hecho (MIDI sin hardware) | Vitest: análisis de mensajes (note-on vel. 0 = off), importación/exportación, almacenamiento lleno/ausente/corrupto. **A mano**: ruta sin dispositivo MIDI muestra aviso y la app sigue. **No probado con un teclado MIDI físico** |
 | 11 | Integración completa | Hecho | Flujo curso → ejercicios → progreso → recarga verificado a mano |
 | 12 | Refinamiento visual y accesibilidad | Hecho (accesibilidad parcialmente verificada) | **Verificado a mano:** atajos del teclado físico (Z C B → Do mayor reconocido, soltar, sin repetición, ignorados dentro de un `input`), tema claro/oscuro y nomenclatura latina/internacional. **Implementado pero no probado:** foco visible, navegación completa solo con teclado, `prefers-reduced-motion`, lectores de pantalla |
-| 13 | Validación y entrega | Hecho | `npm test` (145 pruebas), `npm run build` y **`npm run preview` cargado en el navegador**: 16 rutas sin errores de consola ni desbordamiento; README |
+| 13 | Validación y entrega | Hecho | `npm test` (160 pruebas), `npm run build` y **`npm run preview` cargado en el navegador**: 16 rutas sin errores de consola ni desbordamiento; README |
+
+## Ampliación: Canciones
+| Trabajo | Estado | Verificación |
+|---|---|---|
+| Lectores de MIDI, MusicXML y .mxl; modelo común de partitura | Hecho | Vitest (15 pruebas nuevas): tempo, compás, ligaduras, acordes, manos, percusión ignorada, errores |
+| Acompañamiento de esquemas de acordes (acordes / arpegio) | Hecho | Vitest + **a mano**: Let It Be suena, cursor avanza, acordes resaltados, teclas iluminadas |
+| Reproductor de partituras (rollo de piano, velocidad, bucle por compases, pistas) | Hecho | **A mano**: cambio de velocidad en vivo, pausa/continuar conserva la posición, bucle compases 2–3 |
+| Reproductor de audio (velocidad sin cambiar tono, bucle A–B) | Hecho | **A mano**: WAV importado, reproduce, `preservesPitch`, bucle |
+| Biblioteca en IndexedDB, importar/borrar | Hecho | **A mano**: persiste tras recargar; MIDI, MusicXML y MXL importados; PDF y formatos desconocidos rechazados con mensaje |
+| PDF/imagen de partitura → sonido | **No soportado** | Requiere OMR; se explica al usuario cómo obtener MIDI/MusicXML |
+| Melodía de «Let It Be» | **No incluida** | Obra protegida: solo se incluye el esquema de acordes y un acompañamiento propio |
+
+**No verificado:** archivos MP3 reales (se probó con WAV; ambos usan el mismo `<audio>`), partituras reales grandes de MuseScore, modo «esperar a que toques» (no implementado).
 
 ## Lo que se comprobó con pruebas automáticas y lo que a mano
-- **Automático (Vitest, 145):** motor musical, corrector, generadores, contenido del curso, persistencia, import/export, MIDI parsing.
+- **Automático (Vitest, 160):** motor musical, corrector, generadores, contenido del curso, persistencia, import/export, MIDI parsing.
 - **A mano (navegador integrado, no automatizado):** audio (contexto en marcha, voces activas y liberadas), interacción con el piano, atajos de teclado, flujo de lección, reproducción de progresiones, tema, MIDI sin dispositivo, 375 px y la versión compilada (`preview`).
 - **No verificado:** cambio de tempo *durante* la reproducción (implementado: relanza con el nuevo tempo), descarga del archivo de exportación desde el botón (la serialización sí está probada), teclado MIDI físico, audición real del sonido (el entorno no permite escucharlo; solo se verifica que el contexto de audio corre y las voces se activan y se liberan).
 
@@ -40,4 +53,6 @@ Estado real del proyecto. «Hecho» significa verificado como se indica en la ú
 - `note-id` mostraba el nombre de la nota sobre la tecla marcada (revelaba la respuesta) → ahora los nombres solo aparecen tras contestar.
 - Las marcas de acierto/error del piano se borraban justo tras corregir (efecto dependiente de `grade`) → separado en dos efectos.
 - El dock del piano ocupaba demasiado en pantallas bajas → barra compacta (ajustes de sonido en un desplegable) y plegado por defecto en móvil.
-- Pendiente (P1 ampliable): evaluación del ritmo de ejecución, dictado melódico, más timbres con samples locales opcionales.
+- Al reproducir una partitura y reiniciar/pausar, el callback `onEnd` de la reproducción anterior reseteaba la posición y el estado → cada reproducción lleva un identificador y se ignoran las obsoletas (también en el constructor de progresiones, donde el cambio de tempo en vivo quedaba afectado).
+- `requestAnimationFrame` se pausa con la ventana oculta → el cursor usa un temporizador.
+- Pendiente (P1 ampliable): modo «esperar a que toques», evaluación del ritmo de ejecución, dictado melódico, más timbres con samples locales opcionales.
