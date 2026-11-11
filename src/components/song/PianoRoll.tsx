@@ -27,8 +27,8 @@ export function PianoRoll({ score, pos, muted, loop, onSeek, height: minHeight =
     lo -= 1; hi += 1
     return { lo, hi, rows: Math.max(hi - lo + 1, 14) }
   }, [score])
-  // Cada fila mide al menos 13 px para que se pueda leer el nombre de la nota
-  const height = Math.min(420, Math.max(minHeight, range.rows * 13))
+  // Cada fila mide al menos 16 px para que se pueda leer el nombre de la nota
+  const height = Math.min(620, Math.max(minHeight, range.rows * 16))
 
   useEffect(() => {
     const cv = ref.current
@@ -81,12 +81,13 @@ export function PianoRoll({ score, pos, muted, loop, onSeek, height: minHeight =
       ctx.beginPath()
       ctx.roundRect(x0, yOf(n.midi) + 1, rw, Math.max(3, rowH - 2), 2)
       ctx.fill()
-      // nombre de la nota dentro de la barra (si cabe)
-      if (rowH >= 11 && rw >= 22 && x0 + rw > 0) {
+      // nombre de la nota dentro de la barra: completo si hay sitio, sin octava si es corta
+      if (rw >= 14 && x0 + rw > 0) {
+        const full = rw >= 40
         ctx.fillStyle = '#16120c'
-        ctx.font = `600 ${Math.min(11, Math.floor(rowH - 3))}px sans-serif`
+        ctx.font = `700 ${Math.max(9, Math.min(13, Math.floor(rowH - 2)))}px sans-serif`
         ctx.textBaseline = 'middle'
-        ctx.fillText(formatNote(midiToName(n.midi), naming), Math.max(x0, 0) + 4, yOf(n.midi) + rowH / 2 + 0.5, Math.max(10, rw - 6))
+        ctx.fillText(formatNote(midiToName(n.midi), naming, full), Math.max(x0, 0) + 3, yOf(n.midi) + rowH / 2 + 1, Math.max(10, rw - 4))
         ctx.textBaseline = 'alphabetic'
       }
     }
